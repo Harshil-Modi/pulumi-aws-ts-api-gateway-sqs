@@ -5,7 +5,10 @@ import {
   createApiGatewaySqsRole,
   createRestApi,
 } from "./src/api-gateway/api-gateway";
-import { createRestApiDeployment } from "./src/api-gateway/deployment";
+import {
+  createRestApiDeployment,
+  createRestApiStage,
+} from "./src/api-gateway/deployment";
 import { createRestApiResource } from "./src/api-gateway/resource";
 import { createSqs } from "./src/sqs/sqs";
 
@@ -71,4 +74,19 @@ const restApiDeployment = createRestApiDeployment({
   ],
 });
 
-export const apiUrl = restApi.id;
+// Create rest api stage
+const stage = createRestApiStage({
+  stageName: stack,
+  api: restApi,
+  deployment: restApiDeployment,
+  dependsOn: [
+    resource.httpMethod,
+    resource.integration,
+    resource.resource,
+    resource.integrationResponse,
+    resource.httpMethodResponse,
+  ],
+});
+
+// Make api url and export as an output
+export const apiUrl = pulumi.interpolate`https://${restApi.id}.execute-api.${aws.config.region}.amazonaws.com/${stack}`;
